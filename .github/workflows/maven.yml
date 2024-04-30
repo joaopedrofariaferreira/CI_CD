@@ -26,4 +26,20 @@ jobs:
   
 
     # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
-    
+    - name: Run Checkstyle
+      run: |
+        wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.3.3/checkstyle-10.3.3-all.jar
+        java -jar checkstyle-10.3.3-all.jar -c /google_checks.xml . 
+
+
+    - name: Run JUnit Tests with JaCoCo
+      run: mvn test jacoco:report
+
+    - name: Upload JaCoCo Coverage Report to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./target/site/jacoco/jacoco.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: true
+        verbose: true
