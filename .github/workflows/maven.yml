@@ -8,29 +8,26 @@
 
 name: Java CI with Maven - MINHA PRIMEIRA ACTION
 
-on: [ push, pull_request ]
+on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up JDK 17
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
-  
 
-    # Optional: Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
     - name: Run Checkstyle
       run: |
         wget -q https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.3.3/checkstyle-10.3.3-all.jar
-        java -jar checkstyle-10.3.3-all.jar -c /google_checks.xml . 
-
+        java -jar checkstyle-10.3.3-all.jar -c /google_checks.xml .
 
     - name: Run JUnit Tests with JaCoCo
       run: mvn test jacoco:report
@@ -43,3 +40,29 @@ jobs:
         name: codecov-umbrella
         fail_ci_if_error: true
         verbose: true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Deploy Application
+      run: mvn deploy
+
+    - name: Health Check
+      run: curl -f http://your-application-url/health || exit 1
+
+    - name: Rollback if Unhealthy
+      if: failure()
+      run: echo "Deploy falhou, iniciando rollback" && (inserir comando de rollback aqui)
+
